@@ -104,8 +104,8 @@ resource "aws_security_group" "backend_ec2" {
 data "template_file" "frontend_user_data" {
   template = <<-EOF
     #!/bin/bash
-    sudo apt update -y
-    sudo apt install -y nodejs npm git
+    sudo yum update -y
+    sudo yum install -y nodejs npm git
     git clone https://github.com/AradhyaKC/Task3.git /home/ubuntu/app
     cd /home/ubuntu/app/frontend
     npm install
@@ -116,8 +116,8 @@ data "template_file" "frontend_user_data" {
 data "template_file" "backend_user_data" {
   template = <<-EOF
     #!/bin/bash
-    sudo apt update -y
-    sudo apt install -y nodejs npm git
+    sudo yum update -y
+    sudo yum install -y nodejs npm git
     git clone https://github.com/AradhyaKC/Task3.git /home/ubuntu/app
     cd /home/ubuntu/app/backend
     npm install
@@ -130,6 +130,7 @@ resource "aws_launch_template" "frontend_lt" {
   name_prefix   = "frontend-lt-"
   image_id      = "ami-0c94855ba95c71c99"
   instance_type = "t2.micro"
+  key_name = "key-pair"
 
   network_interfaces {
     associate_public_ip_address = true
@@ -150,6 +151,8 @@ resource "aws_launch_template" "backend_lt" {
   name_prefix   = "backend-lt-"
   image_id      = "ami-0c94855ba95c71c99"
   instance_type = "t2.micro"
+  key_name = "key-pair"
+
 
   network_interfaces {
     associate_public_ip_address = false
