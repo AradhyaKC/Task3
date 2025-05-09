@@ -18,26 +18,26 @@ data "aws_vpc" "default" {
 data "aws_availability_zones" "available" {}
 
 # Subnets
-resource "aws_subnet" "public" {
-  vpc_id                  = data.aws_vpc.default.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = data.aws_availability_zones.available.names[0]
-  map_public_ip_on_launch = true
+# resource "aws_subnet" "public" {
+#   vpc_id                  = data.aws_vpc.default.id
+#   cidr_block              = cidrsubnet(data.aws_vpc.default.cidr_block, 8, 0)
+#   availability_zone       = data.aws_availability_zones.available.names[0]
+#   map_public_ip_on_launch = true
 
-  tags = {
-    Name = "public-subnet"
-  }
-}
+#   tags = {
+#     Name = "public-subnet"
+#   }
+# }
 
-resource "aws_subnet" "private" {
-  vpc_id            = data.aws_vpc.default.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = data.aws_availability_zones.available.names[0]
+# resource "aws_subnet" "private" {
+#   vpc_id            = data.aws_vpc.default.id
+#   cidr_block        =cidrsubnet(data.aws_vpc.default.cidr_block, 8, 1)
+#   availability_zone = data.aws_availability_zones.available.names[0]
 
-  tags = {
-    Name = "private-subnet"
-  }
-}
+#   tags = {
+#     Name = "private-subnet"
+#   }
+# }
 
 # Security Groups
 resource "aws_security_group" "frontend_lb" {
@@ -106,7 +106,7 @@ data "template_file" "frontend_user_data" {
     #!/bin/bash
     sudo apt update -y
     sudo apt install -y nodejs npm git
-    git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git /home/ubuntu/app
+    git clone https://github.com/AradhyaKC/Task3.git /home/ubuntu/app
     cd /home/ubuntu/app/frontend
     npm install
     npx serve -l 3000 .  # Adjust if using express
@@ -118,7 +118,7 @@ data "template_file" "backend_user_data" {
     #!/bin/bash
     sudo apt update -y
     sudo apt install -y nodejs npm git
-    git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git /home/ubuntu/app
+    git clone https://github.com/AradhyaKC/Task3.git /home/ubuntu/app
     cd /home/ubuntu/app/backend
     npm install
     node index.js
@@ -187,7 +187,8 @@ resource "aws_lb" "frontend_lb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.frontend_lb.id]
-  subnets            = [aws_subnet.public.id]
+#   subnets            = [aws_subnet.public.id]
+  subnets            = ["subnet-02030688cd3d8c597","subnet-0e6c750072bbb664e"]
 }
 
 resource "aws_lb" "backend_lb" {
@@ -195,7 +196,8 @@ resource "aws_lb" "backend_lb" {
   internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.backend_ec2.id]
-  subnets            = [aws_subnet.private.id]
+#   subnets            = [aws_subnet.private.id]
+  subnets            = ["subnet-07df562d8898db2fd", "subnet-023bb26cf11675427"]
 }
 
 # Listeners
@@ -223,10 +225,10 @@ resource "aws_lb_listener" "backend_listener" {
 
 # Auto Scaling Groups
 resource "aws_autoscaling_group" "frontend_asg" {
-  desired_capacity    = 0
-  max_size            = 2
+  desired_capacity    = 1
+  max_size            = 1
   min_size            = 1
-  vpc_zone_identifier = [aws_subnet.public.id]
+  vpc_zone_identifier = ["subnet-02030688cd3d8c597"]
   target_group_arns   = [aws_lb_target_group.frontend_tg.arn]
 
   launch_template {
@@ -242,10 +244,10 @@ resource "aws_autoscaling_group" "frontend_asg" {
 }
 
 resource "aws_autoscaling_group" "backend_asg" {
-  desired_capacity    = 0
-  max_size            = 2
+  desired_capacity    = 1
+  max_size            = 1
   min_size            = 1
-  vpc_zone_identifier = [aws_subnet.private.id]
+  vpc_zone_identifier = ["subnet-07df562d8898db2fd"]
   target_group_arns   = [aws_lb_target_group.backend_tg.arn]
 
   launch_template {
