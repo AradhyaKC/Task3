@@ -39,15 +39,43 @@ data "aws_availability_zones" "available" {}
 #   }
 # }
 
-# Security Groups
+# # Security Groups
+# resource "aws_security_group" "frontend_lb" {
+#   name        = "frontend-lb-sg"
+#   description = "Allow HTTP from internet"
+#   vpc_id      = data.aws_vpc.default.id
+
+#   ingress {
+#     from_port   = 80
+#     to_port     = 80
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
 resource "aws_security_group" "frontend_lb" {
   name        = "frontend-lb-sg"
-  description = "Allow HTTP from internet"
+  description = "Allow HTTP and SSH from internet"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
+    description = "Allow HTTP"
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow SSH"
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -59,6 +87,7 @@ resource "aws_security_group" "frontend_lb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
 
 resource "aws_security_group" "frontend_ec2" {
   name        = "frontend-ec2-sg"
@@ -100,18 +129,39 @@ resource "aws_security_group" "backend_ec2" {
   }
 }
 
-# User Data Scripts
+# # User Data Scripts
+# data "template_file" "frontend_user_data" {
+#   template = <<-EOF
+#     #!/bin/bash
+#     sudo yum update -y
+#     sudo yum install -y nodejs npm git
+#     git clone https://github.com/AradhyaKC/Task3.git /home/ubuntu/app
+#     cd /home/ubuntu/app/frontend
+#     npm install
+#     npx serve -l 3000 .  # Adjust if using express
+#   EOF
+# }
 data "template_file" "frontend_user_data" {
   template = <<-EOF
     #!/bin/bash
-    sudo yum update -y
-    sudo yum install -y nodejs npm git
-    git clone https://github.com/AradhyaKC/Task3.git /home/ubuntu/app
-    cd /home/ubuntu/app/frontend
-    npm install
-    npx serve -l 3000 .  # Adjust if using express
+    yum update -y
+    yum install -y git httpd
+
+    # Clone the repo
+    git clone https://github.com/AradhyaKC/Task3.git /home/ec2-user/app
+
+    # Move frontend files to Apache root
+    cp -r /home/ec2-user/app/frontend/* /var/www/html/
+
+    # Set correct permissions
+    chown -R apache:apache /var/www/html
+
+    # Start and enable Apache
+    systemctl start httpd
+    systemctl enable httpd
   EOF
 }
+
 
 data "template_file" "backend_user_data" {
   template = <<-EOF
