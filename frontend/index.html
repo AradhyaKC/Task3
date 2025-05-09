@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Frontend</title>
+</head>
+<body>
+  <h1>Hello from Frontend</h1>
+  <button onclick="fetchMessage()">Get Backend Message</button>
+  <p id="response"></p>
+
+  <script>
+    function fetchMessage() {
+      fetch('http://<BACKEND_LB_PRIVATE_DNS>:5000/message')
+        .then(res => res.text())
+        .then(data => {
+          document.getElementById('response').innerText = data;
+        });
+    }
+  </script>
+</body>
+</html>
